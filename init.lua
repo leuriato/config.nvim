@@ -209,6 +209,9 @@ require('lazy').setup({
     build = ':TSUpdate',
   },
 
+  { 'rose-pine/neovim', name='rose-pine' },
+
+  'theprimeagen/harpoon',
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
   --       These are some example plugins that I've included in the kickstart repository.
   --       Uncomment any of the lines below to enable them.
@@ -494,41 +497,46 @@ local luasnip = require 'luasnip'
 require('luasnip.loaders.from_vscode').lazy_load()
 luasnip.config.setup {}
 
+local cmp_select = {behavior = cmp.SelectBehavior.Select}
+cmp_mappings = cmp.mapping.preset.insert {
+  --['<S-Up>'] = cmp.mapping.select_prev_item(cmp_select),
+  --['<S-Down>'] = cmp.mapping.select_next_item(cmp_select),
+  ['<C-S-Up>'] = cmp.mapping.scroll_docs(-4),
+  ['<C-S-Down>'] = cmp.mapping.scroll_docs(4),
+  ['<C-Space>'] = cmp.mapping.complete {},
+  ['<CR>'] = cmp.mapping.confirm {
+    select = false,
+  },
+  ['<S-Down>'] = cmp.mapping(function(fallback)
+    if cmp.visible() then
+      cmp.select_next_item(cmp_select)
+    elseif luasnip.expand_or_locally_jumpable() then
+      luasnip.expand_or_jump()
+    else
+      fallback()
+    end
+  end, { 'i', 's' }),
+  ['<S-Up>'] = cmp.mapping(function(fallback)
+    if cmp.visible() then
+      cmp.select_prev_item(cmp_select)
+    elseif luasnip.locally_jumpable(-1) then
+      luasnip.jump(-1)
+    else
+      fallback()
+    end
+  end, { 'i', 's' }),
+}
+
+cmp_mappings['<Up>'] = nil
+cmp_mappings['<Down>'] = nil
+
 cmp.setup {
   snippet = {
     expand = function(args)
       luasnip.lsp_expand(args.body)
     end,
   },
-  mapping = cmp.mapping.preset.insert {
-    ['<C-n>'] = cmp.mapping.select_next_item(),
-    ['<C-p>'] = cmp.mapping.select_prev_item(),
-    ['<C-d>'] = cmp.mapping.scroll_docs(-4),
-    ['<C-f>'] = cmp.mapping.scroll_docs(4),
-    ['<C-Space>'] = cmp.mapping.complete {},
-    ['<CR>'] = cmp.mapping.confirm {
-      behavior = cmp.ConfirmBehavior.Replace,
-      select = true,
-    },
-    ['<Tab>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_next_item()
-      elseif luasnip.expand_or_locally_jumpable() then
-        luasnip.expand_or_jump()
-      else
-        fallback()
-      end
-    end, { 'i', 's' }),
-    ['<S-Tab>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_prev_item()
-      elseif luasnip.locally_jumpable(-1) then
-        luasnip.jump(-1)
-      else
-        fallback()
-      end
-    end, { 'i', 's' }),
-  },
+  mapping = cmp_mappings,
   sources = {
     { name = 'nvim_lsp' },
     { name = 'luasnip' },
@@ -537,3 +545,97 @@ cmp.setup {
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+require('rose-pine').setup({
+	--- @usage 'auto'|'main'|'moon'|'dawn'
+	variant = 'auto',
+	--- @usage 'main'|'moon'|'dawn'
+	dark_variant = 'main',
+	bold_vert_split = false,
+	dim_nc_background = false,
+	disable_background = false,
+	disable_float_background = false,
+	disable_italics = false,
+
+	--- @usage string hex value or named color from rosepinetheme.com/palette
+	groups = {
+		background = 'base',
+		background_nc = '_experimental_nc',
+		panel = 'surface',
+		panel_nc = 'base',
+		border = 'highlight_med',
+		comment = 'muted',
+		link = 'iris',
+		punctuation = 'subtle',
+
+		error = 'love',
+		hint = 'iris',
+		info = 'foam',
+		warn = 'gold',
+
+		headings = {
+			h1 = 'iris',
+			h2 = 'foam',
+			h3 = 'rose',
+			h4 = 'gold',
+			h5 = 'pine',
+			h6 = 'foam',
+		}
+		-- or set all headings at once
+		-- headings = 'subtle'
+	},
+
+	-- Change specific vim highlight groups
+	-- https://github.com/rose-pine/neovim/wiki/Recipes
+	highlight_groups = {
+		ColorColumn = { bg = 'rose' },
+
+		-- Blend colours against the "base" background
+		CursorLine = { bg = 'foam', blend = 10 },
+		StatusLine = { fg = 'love', bg = 'love', blend = 10 },
+
+		-- By default each group adds to the existing config.
+		-- If you only want to set what is written in this config exactly,
+		-- you can set the inherit option:
+		Search = { bg = 'gold', inherit = false },
+	}
+})
+
+-- Set colorscheme after options
+vim.cmd('colorscheme rose-pine')
+
+vim.wo.number = true
+vim.wo.relativenumber = true
+
+local nmap = function(keys, func, desc)
+  if desc then
+    desc = 'Harpoon: ' .. desc
+  end
+
+  vim.keymap.set('n', keys, func, { desc = desc })
+end
+
+local mark = require('harpoon.mark')
+local ui = require('harpoon.ui')
+
+nmap("<M-a>", mark.add_file, "[A]jouter le fichier")
+nmap("<M-q>", ui.toggle_quick_menu, "Menu harpoon")
+
+nmap("<M-&>", function () ui.nav_file(1) end, "Aller au fichier 1")
+nmap("<M-é>", function () ui.nav_file(2) end, "Aller au fichier 2")
+nmap("<M-\">", function () ui.nav_file(3) end, "Aller au fichier 3")
+nmap("<M-'>", function () ui.nav_file(4) end, "Aller au fichier 4")
+
+local nmap = function(keys, func, desc)
+  if desc then
+    desc = 'Navigation: ' .. desc
+  end
+
+  vim.keymap.set('n', keys, func, { desc = desc })
+end
+
+local telescope = require('telescope.builtin')
+nmap('<M-e>', vim.cmd.Ex, "[E]xplorer les fichiers")
+nmap('<M-f>', telescope.find_files, "Trouver un [F]ichier")
+nmap('<M-g>', telescope.git_files, "Trouver un fichier [G]it")
+
+vim.api.nvim_set_hl(0, "Normal", {guibg=NONE, ctermbg=NONE})
