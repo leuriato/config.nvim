@@ -1,8 +1,8 @@
 --[[
 
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
+=================================================================
+================ READ THIS BEFORE CONTINUING ====================
+=================================================================
 
 Kickstart.nvim is *not* a distribution.
 
@@ -73,6 +73,19 @@ require('lazy').setup({
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
+  'pest-parser/pest.vim',
+
+  {
+    'williamboman/mason.nvim',
+    config = function ()
+      require('mason').setup {
+        registries = {
+          "file:~/Documents/Projets/mason-registry",
+          "github:mason-org/mason-registry",
+        }
+      }
+    end
+  },
 
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
@@ -81,16 +94,17 @@ require('lazy').setup({
     'neovim/nvim-lspconfig',
     dependencies = {
       -- Automatically install LSPs to stdpath for neovim
-      {
+      --[[ {
         'williamboman/mason.nvim',
         config = function ()
           require('mason').setup {
-            registries = {
+            registers = {
+              "github:leuriato/mason-registry",
               "github:mason-org/mason-registry",
             }
           }
         end
-      },
+      }, ]]--
       'williamboman/mason-lspconfig.nvim',
 
       -- Useful status updates for LSP
